@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using PromoCodeFactory.Core.Abstractions.Repositories;
+using PromoCodeFactory.Core.Domain.Administration;
+using PromoCodeFactory.DataAccess.Data;
+using PromoCodeFactory.DataAccess.Repositories;
 
 namespace PromoCodeFactory.WebHost
 {
@@ -23,7 +27,20 @@ namespace PromoCodeFactory.WebHost
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllersWithViews();
+            services.AddControllers();
+            
+            services.AddScoped(typeof(IRepository<Employee>), (x) =>
+                new InMemoryRepository<Employee>(FakeDataFactory.Employees));
+            services.AddScoped(typeof(IRepository<Role>), (x) =>
+                new InMemoryRepository<Role>(FakeDataFactory.Roles));
+
+
+            services.AddOpenApiDocument(options =>
+            {
+                options.Title = "PromoCode Factory API Doc";
+                options.Version = "1.0";
+            });
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -35,22 +52,21 @@ namespace PromoCodeFactory.WebHost
             }
             else
             {
-                app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+            app.UseOpenApi();
+            app.UseSwaggerUi3(x =>
+            {
+                x.DocExpansion = "list";
+            });
+
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
 
             app.UseRouting();
 
-            app.UseAuthorization();
-
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapControllers();
             });
         }
     }

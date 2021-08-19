@@ -3,17 +3,41 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using PromoCodeFactory.Core.Abstractions.Repositories;
+using PromoCodeFactory.Core.Domain.Administration;
+using PromoCodeFactory.WebHost.Models;
 
-// For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace PromoCodeFactory.WebHost.Controllers
 {
-    public class EmployeesController : Controller
+    [ApiController]
+    [Route("api/v1/[controller]")]
+    public class EmployeesController : ControllerBase
     {
-        // GET: /<controller>/
-        public IActionResult Index()
+        private readonly IRepository<Employee> _employeeRepository;
+        public EmployeesController(IRepository<Employee> employeeRepository)
         {
-            return View();
+            _employeeRepository = employeeRepository;
+        }
+
+        /// <summary>
+        /// Получить данные всех сотрудников
+        /// </summary>
+        /// <returns></returns>
+        
+        [HttpGet]
+        public async Task<List<EmployeeShortResponse>> GetEmployeesAsync()
+        {
+            var employees = await _employeeRepository.GetAllAsync();
+
+            var employeesModelList = employees.Select(x =>
+                new EmployeeShortResponse()
+                {
+                    Id = x.Id,
+                    Email = x.Email,
+                    FullName = x.FullName
+                }).ToList();
+            return employeesModelList;
         }
     }
 }
